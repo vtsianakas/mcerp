@@ -62,6 +62,24 @@ class UncertainFunction(object):
         self._mcpts = np.atleast_1d(mcpts).flatten()
         self.tag = None
 
+    def expand(self, times=0):
+        """
+        Expands an uncertain function `times` times.
+        """
+        return np.full(times, self)
+
+    def __getitem__(self, idx):
+        """
+        Provide slicing functionality
+        """
+        return np.array(self._mcpts[idx])
+
+    def __setitem__(self, idx, value):
+        """
+        Provide slicing functionality
+        """
+        self._mcpts[idx] = value
+
     @property
     def mean(self):
         """
@@ -136,6 +154,13 @@ class UncertainFunction(object):
         sk = self.skew
         kt = self.kurt
         return [mn, vr, sk, kt]
+
+    @property
+    def cv(self):
+        """
+        Returns the coefficient of variation
+        """
+        return self.std / self.mean
 
     def percentile(self, val):
         """
