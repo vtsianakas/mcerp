@@ -742,6 +742,20 @@ from . import stats
 # CONTINUOUS DISTRIBUTIONS
 ###############################################################################
 
+def SkewNorm(alpha, loc, scale):
+    """
+    A skewnorm distribution
+
+    Parameters
+    ----------
+    alpha : float
+        The distribution's alpha
+    loc: float
+        The mean
+    scale: float
+        The standard deviation
+    """
+    return uv(ss.skewnorm(a=alpha, loc=loc, scale=scale))
 
 def Beta(alpha, beta, low=0, high=1, tag=None):
     """
