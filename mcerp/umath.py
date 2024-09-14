@@ -309,12 +309,3 @@ def trunc(x):
     else:
         return np.trunc(x)
 
-def round(x):
-    """
-    Round the values to the nearest integer
-    """
-    if isinstance(x, UncertainFunction):
-        mctps = np.round(x._mcpts).astype(np.int32)
-        return UncertainFunction(mctps)
-    else:
-        return np.round(x).astype(np.int32)
