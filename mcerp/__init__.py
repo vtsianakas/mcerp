@@ -74,6 +74,8 @@ class UncertainFunction(object):
 
         Rate could be an `UncertainFunction` itself.
 
+        Parameters
+        ==========
         """
         assert rate is not None
         assert times > 0
