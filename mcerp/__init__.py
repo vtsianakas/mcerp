@@ -571,7 +571,7 @@ class UncertainVariable(UncertainFunction):
     Convenient constructors have been created to make assigning these 
     distributions easier. They follow the parameter notation found in the
     respective Wikipedia articles:
-    
+
     +---------------------------+---------------------------------------------------------------+
     | MCERP Distibution         | Wikipedia page                                                |
     +===========================+===============================================================+
