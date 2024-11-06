@@ -64,9 +64,22 @@ class UncertainFunction(object):
 
     def expand(self, times=0):
         """
-        Expands an uncertain function `times` times.
+        Expands an `UncertainFunction` `times` times.
         """
         return np.full(times, self)
+
+    def expand_by_rate(self, times=0, rate=None):
+        """
+        Expands an `UncertainFunction` `times` times by a `rate`.
+
+        Rate could be an `UncertainFunction` itself.
+
+        """
+        assert rate is not None
+        assert times > 0
+        expanded=np.array([(1 + rate) ** n for n in range(times + 1)]) * self
+        expanded = expanded[1:]
+        return expanded
 
     def __getitem__(self, idx):
         """
@@ -751,9 +764,9 @@ def SkewNorm(alpha, loc, scale):
     alpha : float
         The distribution's alpha
     loc: float
-        The mean
+        The distribution's mean
     scale: float
-        The standard deviation
+        The distribution's standard deviation
     """
     return uv(ss.skewnorm(a=alpha, loc=loc, scale=scale))
 
