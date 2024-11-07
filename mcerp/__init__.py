@@ -76,6 +76,7 @@ class UncertainFunction(object):
         out : numpy array
             An array of length times that contains the expanded `UncertainFunction`
         """
+        assert times > 0, "`times' should be and integer greater than 0"
         return np.full(times, self)
 
     def expand_by_rate(self, times=0, rate=None, padding=0):
@@ -126,7 +127,7 @@ class UncertainFunction(object):
         following the project's completion.
         """
         assert rate is not None, "`rate' cannot be None"
-        assert times > 0, "`times' should be greater than 0"
+        assert times > 0, "`times' should be and integer greater than 0"
         assert 0 <= padding < times, "`padding' should be in [0, times)"
         if padding > 0:
             times = times + padding
