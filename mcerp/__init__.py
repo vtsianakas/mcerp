@@ -65,23 +65,73 @@ class UncertainFunction(object):
     def expand(self, times=0):
         """
         Expands an `UncertainFunction` `times` times.
+
+        Parameters
+        ----------
+        times : int
+            How many times to expand
+
+        Returns
+        -------
+        out : numpy array
+            An array of length times that contains the expanded `UncertainFunction`
         """
         return np.full(times, self)
 
-    def expand_by_rate(self, times=0, rate=None):
+    def expand_by_rate(self, times=0, rate=None, padding=0):
         """
         Expands an `UncertainFunction` `times` times by a `rate`.
 
         Rate could be an `UncertainFunction` itself.
 
         Parameters
-        ==========
+        ----------
+        times : int, required
+            How many times to expand the `UncertainFunction`. An integer greater than zero is expected.
+        rate : number or `UncertainFunction`, required
+            The rate by which the `UncertainFunction` is expanded
+        padding : int, optional
+            Padding to the return `numpy` array
+
+        Returns
+        -------
+        out : `numpy` array
+            An array of length times that contains the expanded `UncertainFunction`
+
+        Examples
+        --------
+
+        Consider the following use case: You have an `UncertainFunction` that models a commodity price.
+        You expect that this price is going to increase, either by a constant rate or by an `UncertainFunction`,
+        both representing an increase rate. You want to examine the commodity's price for the next `times` years.
+
+        >>> current_commodity_price = PERT(15, 30, 45) #USD
+        >>> commodity_price_increase_rate = U(.1, .3)
+        >>> commodity_price = current_commodity_price.expand_by_rate(5, commodity_price_increase_rate)
+        >>> commodity_price_constant_rate = commodity_price.expand_by_rate(5, 0.15)
+
+        The variable `commodity_price` is a `numpy` array of length 5, each element of which is an `UncertainFunction`,
+        holding the distribution of the commodity's price for each year.
+
+        Now consider that you estimate, for example, the *current* electricity demand for a facility. You want to
+        appraise a project that will finish a year from now, and you need to estimate the electricity demand for the
+        next ten consecutive years, following completion.
+
+        >>> current_demand = PERT(3_548, 4_000, 4_250) # kWh
+        >>> demand_rate = U(.1, .15)
+        >>> electricity_demand = current_demand.expand_by_rate(10, demand_rate, 1)
+
+        If X is the current year, then the variable `electricity_demand` is a `numpy` array of length 10, each element
+        of which is the expected electricity demand for the year X+1 to X+11, i.e. for the next ten consecutive years
+        following the project's completion.
         """
-        assert rate is not None
-        assert times > 0
-        expanded=np.array([(1 + rate) ** n for n in range(times + 1)]) * self
-        expanded = expanded[1:]
-        return expanded
+        assert rate is not None, "`rate' cannot be None"
+        assert times > 0, "`times' should be greater than 0"
+        assert 0 <= padding < times, "`padding' should be in [0, times)"
+        if padding > 0:
+            times = times + padding
+        expanded = np.array([(1 + rate) ** n for n in range(times)]) * self
+        return expanded[padding:]
 
     def __getitem__(self, idx):
         """
