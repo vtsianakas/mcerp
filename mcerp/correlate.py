@@ -2,8 +2,35 @@ import itertools
 import numpy as np
 from scipy.stats import rankdata
 from scipy.stats.distributions import norm
+from scipy.linalg import cholesky, LinAlgError
 from . import UncertainFunction
 
+
+def correlate_by(params: UncertainFunction, r: float = None):
+    """
+    Force a Pearson's rho correlation coefficient on an a set of `UncertainFunction` objects
+    distributed objects.
+
+    Parameters
+    ----------
+    params : arraly-like
+        An array of `UncertainFunction` objects
+    r : int
+        The correlation coefficient to be imposed
+    """
+    assert r is not None, "Pearson's rho cannot be `None`"
+    assert all(
+        [isinstance(param, UncertainFunction) for param in params]
+    ), 'All inputs to "correlate" must be of type "UncertainFunction"'
+
+    if not -1 <= r <= 1:
+        raise Exception(f"Invalid value for Pearson's rho. Expected -1 <= r <= 1. Given: {r}")
+
+    corrmat = np.array([
+        [1, r],
+        [r, 1]
+    ])
+    return correlate(params, corrmat)
 
 def correlate(params, corrmat):
     """
@@ -33,6 +60,43 @@ def correlate(params, corrmat):
     for i in range(len(params)):
         params[i]._mcpts = new_data[:, i]
 
+
+def stabilize_corrmat(corrmat):
+    """
+    Ensures that the correlation matrix is positive-definite and stable
+    for Cholesky decomposition.
+
+    If the matrix is not positive-definite, it performs eigenvalue
+    stabilization to ensure positive eigenvalues.
+
+    Parameters
+    ----------
+    corrmat : 2d-array
+        A square matrix (n x n) representing the correlation coefficients
+        between the variables. The matrix must be symmetric.
+
+    Returns
+    -------
+    stable_corrmat : 2d-array
+        A stable version of the input correlation matrix that is guaranteed
+        to be positive-definite and suitable for Cholesky decomposition.
+    """
+    try:
+        # Try the Cholesky decomposition
+        np.linalg.cholesky(corrmat)
+        return corrmat  # Return the matrix if Cholesky succeeds
+    except np.linalg.LinAlgError:
+        # Cholesky failed, stabilize the matrix by using eigenvalue decomposition
+
+        # Eigenvalue decomposition to stabilize the matrix
+        eigvals, eigvecs = np.linalg.eigh(corrmat)
+
+        # Ensure positive eigenvalues (set small eigenvalues to a small positive number)
+        eigvals = np.maximum(eigvals, 1e-6)
+
+        # Reconstruct the matrix with stabilized eigenvalues
+        stable_corrmat = np.dot(eigvecs, np.dot(np.diag(eigvals), eigvecs.T))
+        return stable_corrmat
 
 def induce_correlations(data, corrmat):
     """
