@@ -8,7 +8,7 @@ from . import UncertainFunction
 
 def correlate_by(params: UncertainFunction, r: float = None):
     """
-    Force a Pearson's rho correlation coefficient on an a set of `UncertainFunction` objects
+    Force a Pearson's rho correlation coefficient on a set of `UncertainFunction` objects
     distributed objects.
 
     Parameters
