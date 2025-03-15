@@ -48,6 +48,7 @@ def to_uncertain_func(x):
 
     raise NotUpcast("%s cannot be converted to a number with" " uncertainty" % type(x))
 
+uncertain=to_uncertain_func
 
 class UncertainFunction(object):
     """
