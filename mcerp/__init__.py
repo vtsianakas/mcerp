@@ -191,8 +191,46 @@ class UncertainFunction(object):
         return self._to_general_representation(str)
 
     def __repr__(self):
-        #        return self._to_general_representation(repr)
         return str(self)
+
+    def summary(self, name=None, precision=2):
+        """Summary statistics
+
+        Parameters
+        ----------
+        name : ``str``
+            The variable's name to be printed
+        precision: ``int``
+            Decimal precision for the printable output
+        """
+
+        def get_quantiles(self):
+            s = ""
+            for i in [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]:
+                s += f' > P{i * 100:.<39.2f}:{np.quantile(self._mcpts, i):>15,.{precision}f}\n'
+                # s += f" > P{i*100}................... {np.quantile(self._mcpts, i)}\n"
+            return s
+
+        mn, vr, sk, kt = self.stats
+        if name is not None:
+            s = "MCERP Uncertain Value (" + name + "):\n"
+        elif self.tag is not None:
+            s = "MCERP Uncertain Value (" + self.tag + "):\n"
+        else:
+            s = "MCERP Uncertain Value:\n"
+        s += f' > {"Mean":.<40}:{mn:>15,.{precision}f}\n'
+        s += f' > {"Variance":.<40}:{vr:>15,.{precision}f}\n'
+        s += f' > {"St.Dev":.<40}:{self.std:>15,.{precision}f}\n'
+        s += f' > {"CV":.<40}:{self.cv:>15,.{precision}f}\n'
+        s += f' > {"Skewness Coefficient":.<40}:{sk:>15,.{precision}f}\n'
+        s += f' > {"Kurtosis Coefficient":.<40}:{kt:>15,.{precision}f}\n'
+        s += f' > {"Min":.<40}:{self.min:>15,.{precision}f}\n'
+        s += f' > {"Max":.<40}:{self.max:>15,.{precision}f}\n'
+        s += f' > {"Range":.<40}:{self.max - self.min:>15,.{precision}f}\n'
+        s += f' > {"IQR":.<40}:{np.quantile(self._mcpts, 0.75) - np.quantile(self._mcpts, 0.25):>15,.{precision}f}\n'
+        s += f' > {"Std.Error":.<40}:{self.std / np.sqrt(len(self)):>15,.{precision}f}\n'
+        s += get_quantiles(self)
+        print(s)
 
     def describe(self, name=None):
         """
