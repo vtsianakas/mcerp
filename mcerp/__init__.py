@@ -138,6 +138,11 @@ class UncertainFunction(object):
         kt = self.kurt
         return [mn, vr, sk, kt]
 
+    @property
+    def cv(self):
+        """Return the coefficient of variation"""
+        return self.std / self.mean
+
     def percentile(self, val):
         """
         Get the distribution value at a given percentile or set of percentiles.
