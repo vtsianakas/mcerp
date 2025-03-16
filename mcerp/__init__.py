@@ -283,25 +283,25 @@ class UncertainFunction(object):
         print(s)
 
     def plot_pdf(
-            self,
-            name=None,
-            a=0.05,
-            ax=None,
-            fig=None,
-            figsize=(10, 5),
-            fontsize=16,
-            bins='sturges',
-            grid=True,
-            xlabel='Values',
-            ylabel="Probability Density",
-            samples=50,
-            hist=True,
-            legend=True,
-            color_cycler=None,
-            x_label_formatter=None,
-            y_label_formatter=None,
-            x_major_locator=None,
-            **kwargs
+        self,
+        name=None,
+        a=0.05,
+        ax=None,
+        fig=None,
+        figsize=(10, 5),
+        fontsize=16,
+        bins='sturges',
+        grid=True,
+        xlabel='Values',
+        ylabel="Probability Density",
+        samples=50,
+        hist=True,
+        legend=True,
+        color_cycler=None,
+        x_label_formatter=None,
+        y_label_formatter=None,
+        x_major_locator=None,
+        **kwargs
     ):
         import matplotlib.pyplot as plt
         from cycler import cycler
@@ -386,7 +386,7 @@ class UncertainFunction(object):
             alpha=kwargs.get('alpha', 0.8)
         )
         ax.axvspan(ci_low, ci_high, color=color, alpha=0.05)
-
+        ax.grid(grid)
         ax.tick_params(axis='both', which='major', labelsize=fontsize)
         ax.set_xlabel(xlabel, fontsize=fontsize + 1)
         ax.set_ylabel(ylabel, fontsize=fontsize + 1)
@@ -413,25 +413,25 @@ class UncertainFunction(object):
             ax.legend(fontsize=fontsize - 2)
 
     def plot_cdf(
-            self,
-            name=None,
-            a=0.05,
-            ax=None,
-            fig=None,
-            figsize=(10, 5),
-            fontsize=16,
-            grid=True,
-            xlabel='Values',
-            ylabel='Cum. Probability',
-            color_cycler=None,
-            x_label_formatter=None,
-            y_label_formatter=None,
-            x_major_locator=None,
-            **kwargs
+        self,
+        name=None,
+        a=0.05,
+        ax=None,
+        fig=None,
+        figsize=(10, 5),
+        fontsize=16,
+        grid=True,
+        xlabel='Values',
+        ylabel='Cum. Probability',
+        color_cycler=None,
+        x_label_formatter=None,
+        y_label_formatter=None,
+        x_major_locator=None,
+        **kwargs
     ):
         import matplotlib.pyplot as plt
         from cycler import cycler
-        from matplotlib.ticker import FuncFormatter
+        from matplotlib.ticker import FuncFormatter, FixedLocator
 
         if color_cycler is not None:
             if not isinstance(color_cycler, list):
