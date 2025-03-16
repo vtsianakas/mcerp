@@ -282,6 +282,234 @@ class UncertainFunction(object):
         s += " > Kurtosis Coefficient... {: }\n".format(kt)
         print(s)
 
+    def plot_pdf(
+            self,
+            name=None,
+            a=0.05,
+            ax=None,
+            fig=None,
+            figsize=(10, 5),
+            fontsize=16,
+            bins='sturges',
+            grid=True,
+            xlabel='Values',
+            ylabel="Probability Density",
+            samples=50,
+            hist=True,
+            legend=True,
+            color_cycler=None,
+            x_label_formatter=None,
+            y_label_formatter=None,
+            x_major_locator=None,
+            **kwargs
+    ):
+        import matplotlib.pyplot as plt
+        from cycler import cycler
+        from matplotlib.ticker import FuncFormatter, FixedLocator
+
+        precision = kwargs.get('precision', 2)
+
+        if color_cycler is not None:
+            if not isinstance(color_cycler, list):
+                raise ValueError(f"`color_cycler` should be a list of colors")
+            elif len(color_cycler) == 0:
+                raise ValueError(f"`color_cycler` should not be an empty list")
+
+        if color_cycler is None:
+            cy = cycler(
+                'color',
+                ['#182234', '#CC0E80', '#70BF4B', '#F2B035', '#F20505']
+            )
+        else:
+            cy = cycler(
+                'color',
+                color_cycler
+            )
+
+        if ax is None and fig is None:
+            fig, ax = plt.subplots(figsize=figsize)
+        elif ax is None or fig is None:
+            raise ValueError(f"You should provide both an `ax` and `fig` arguments")
+
+        ax.set_prop_cycle(cy)
+
+        # Get the first color in case a histogram will not be drawn
+        initial_color = next(iter(cy))
+
+        hist_line = None
+        if hist:
+            ax.hist(
+                self._mcpts,
+                bins=bins,
+                density=True,
+                alpha=kwargs.get('alpha', 0.3),
+                edgecolor='black',
+                align='mid',
+            )
+
+        # If hist is not drawn, then draw the kde line using the cycler's first color.
+        # If hist is drawn, then draw the kde line using the same color.
+        color = initial_color['color']
+
+        p = ss.gaussian_kde(self._mcpts)
+        xp = np.linspace(self.min, self.max, samples)
+        y = p.evaluate(xp)
+        # Plot the empirical pdf line
+        ax.plot(xp, y, ls='-', label=kwargs.get('label', "Empirical PDF"), color=color, lw=2, alpha=1)
+
+        # Plot the mean
+        ax.axvline(
+            self.mean,
+            color=color,
+            linestyle='dashed',
+            alpha=1.0,
+            lw=1.3,
+            label=rf"$\bar{{\mu}} = {self.mean:,.{precision}f}$"
+        )
+
+        # Plot confidence lines
+        ci_low, ci_high = np.percentile(self._mcpts, np.array([a / 2, 1 - a / 2]) * 100)
+        alpha_low = f"{f'{(a / 2) * 100:,.4f}'.rstrip('0')}"
+        alpha_high = f"{f'{(1 - a / 2) * 100:,.4f}'.rstrip('0')}"
+        ax.axvline(
+            ci_low,
+            linestyle=':',
+            color=color,
+            label=rf"$P_{{{alpha_low}}} = {ci_low:,.{precision}f}$",
+            alpha=kwargs.get('alpha', 0.8)
+        )
+        ax.axvline(
+            ci_high,
+            linestyle=':',
+            color=color,
+            label=rf"$P_{{{alpha_high}}} = {ci_high:,.{precision}f}$",
+            alpha=kwargs.get('alpha', 0.8)
+        )
+        ax.axvspan(ci_low, ci_high, color=color, alpha=0.05)
+
+        ax.tick_params(axis='both', which='major', labelsize=fontsize)
+        ax.set_xlabel(xlabel, fontsize=fontsize + 1)
+        ax.set_ylabel(ylabel, fontsize=fontsize + 1)
+
+        if x_label_formatter:
+            ax.xaxis.set_major_formatter(FuncFormatter(x_label_formatter))
+        if y_label_formatter:
+            ax.yaxis.set_major_formatter(FuncFormatter(y_label_formatter))
+        if x_major_locator == 'tri':
+            ax.xaxis.set_major_locator(FixedLocator([
+                ci_low, self.mean, ci_high
+            ]))
+        elif x_major_locator:
+            ax.xaxis.set_major_locator(x_major_locator)
+
+        if name is not None:
+            ax.set_title(f"{name}", fontsize=fontsize + 4)
+        elif self.tag is not None:
+            ax.set_title(f"{self.initial_colortag}", fontsize=fontsize + 4)
+        else:
+            ax.set_title("Histogram", fontsize=fontsize + 4)
+        ax.set_ylabel(ylabel)
+        if legend:
+            ax.legend(fontsize=fontsize - 2)
+
+    def plot_cdf(
+            self,
+            name=None,
+            a=0.05,
+            ax=None,
+            fig=None,
+            figsize=(10, 5),
+            fontsize=16,
+            grid=True,
+            xlabel='Values',
+            ylabel='Cum. Probability',
+            color_cycler=None,
+            x_label_formatter=None,
+            y_label_formatter=None,
+            x_major_locator=None,
+            **kwargs
+    ):
+        import matplotlib.pyplot as plt
+        from cycler import cycler
+        from matplotlib.ticker import FuncFormatter
+
+        if color_cycler is not None:
+            if not isinstance(color_cycler, list):
+                raise ValueError(f"`color_cycler` should be a list of colors")
+            elif len(color_cycler) == 0:
+                raise ValueError(f"`color_cycler` should not be an empty list")
+
+        precision = kwargs.pop('precision', 2)
+
+        if color_cycler is None:
+            cy = cycler(
+                'color',
+                ['#182234', '#CC0E80', '#70BF4B', '#F2B035', '#F20505']
+            )
+        else:
+            cy = cycler(
+                'color',
+                color_cycler
+            )
+
+        if ax is None and fig is None:
+            fig, ax = plt.subplots(figsize=figsize)
+        elif ax is None or fig is None:
+            raise ValueError(f"You should provide both an `ax` and `fig` arguments")
+
+        ax.set_prop_cycle(cy)
+        data_sorted = np.sort(self._mcpts)
+
+        # calculate the proportional values of samples
+        p = 1. * np.arange(len(data_sorted)) / (len(data_sorted) - 1)
+
+        line = ax.plot(data_sorted, p, lw=2, **kwargs)
+        ax.set_xlabel(xlabel, fontsize=fontsize + 1)
+        ax.set_ylabel(ylabel, fontsize=fontsize + 1)
+        plt.tick_params(axis='both', which='major', labelsize=fontsize)
+        color = line[0].get_color()
+
+        ci_low, ci_high = np.percentile(self._mcpts, np.array([a / 2, 1 - a / 2]) * 100)
+        # ci_low, ci_high = self.percentile([a/2, 1-a/2])
+        alpha_low = f"{f'{(a / 2) * 100:,.4f}'.rstrip('0')}"
+        alpha_high = f"{f'{(1 - a / 2) * 100:,.4f}'.rstrip('0')}"
+        ax.axvline(
+            ci_low,
+            linestyle=':',
+            color=color,
+            label=rf"$P_{{{alpha_low}}} = {ci_low:,.{precision}f}$"
+        )
+        ax.axvline(
+            ci_high,
+            linestyle=':',
+            color=color,
+            label=rf"$P_{{{alpha_high}}} = {ci_high:,.{precision}f}$"
+        )
+        ax.axvspan(ci_low, ci_high, color=color, alpha=kwargs.get('alpha', 0.05))
+
+        ax.legend(fontsize=fontsize - 2)
+
+        title = f""
+        if self.tag and name is None:
+            title = f"{self.tag}"
+        elif name is not None:
+            title = f"{name}"
+        else:
+            title = f"CDF"
+        ax.grid(grid)
+        ax.tick_params(axis='both', which='major', labelsize=fontsize)
+        ax.set_title(title, fontsize=fontsize + 4)
+        if x_label_formatter:
+            ax.xaxis.set_major_formatter(FuncFormatter(x_label_formatter))
+        if y_label_formatter:
+            ax.yaxis.set_major_formatter(FuncFormatter(y_label_formatter))
+        if x_major_locator == 'tri':
+            ax.xaxis.set_major_locator(FixedLocator([
+                ci_low, self.mean, ci_high
+            ]))
+        elif x_major_locator:
+            ax.xaxis.set_major_locator(x_major_locator)
+
     def plot(self, hist=False, show=False, **kwargs):
         """
         Plot the distribution of the UncertainFunction. By default, the
