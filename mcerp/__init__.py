@@ -9,15 +9,15 @@ Copyright: 2013 - 2014
 import math
 import statsmodels.api as sm
 from copy import deepcopy
-from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import version, PackageNotFoundError
 import numpy as np
 import multiprocessing as mp
 import scipy.stats as ss
 from .lhd import lhd
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+    __version = version(__name__)
+except PackageNotFoundError:
     # package is not installed
     pass
 
