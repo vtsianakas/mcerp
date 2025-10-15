@@ -8,7 +8,7 @@ from . import UncertainFunction
 
 def correlate_by(params: UncertainFunction, r: float = None):
     """
-    Force a Pearson's rho correlation coefficient on a set of `UncertainFunction` objects
+    Force a Pearson's rho correlation coefficient on an a set of `UncertainFunction` objects
     distributed objects.
 
     Parameters
@@ -31,34 +31,6 @@ def correlate_by(params: UncertainFunction, r: float = None):
         [r, 1]
     ])
     return correlate(params, corrmat)
-
-def correlate(params, corrmat):
-    """
-    Force a correlation matrix on a set of statistically distributed objects.
-    This function works on objects in-place.
-    
-    Parameters
-    ----------
-    params : array
-        An array of of uv objects.
-    corrmat : 2d-array
-        The correlation matrix to be imposed
-    
-    """
-    # Make sure all inputs are compatible
-    assert all(
-        [isinstance(param, UncertainFunction) for param in params]
-    ), 'All inputs to "correlate" must be of type "UncertainFunction"'
-
-    # Put each ufunc's samples in a column-wise matrix
-    data = np.vstack([param._mcpts for param in params]).T
-
-    # Apply the correlation matrix to the sampled data
-    new_data = induce_correlations(data, corrmat)
-
-    # Re-set the samples to the respective variables
-    for i in range(len(params)):
-        params[i]._mcpts = new_data[:, i]
 
 
 def stabilize_corrmat(corrmat):
@@ -98,10 +70,43 @@ def stabilize_corrmat(corrmat):
         stable_corrmat = np.dot(eigvecs, np.dot(np.diag(eigvals), eigvecs.T))
         return stable_corrmat
 
+
+def correlate(params, corrmat):
+    """
+    Force a correlation matrix on a set of statistically distributed objects.
+    This function works on objects in-place.
+
+    Parameters
+    ----------
+    params : array
+        An array of of uv objects.
+    corrmat : 2d-array
+        The correlation matrix to be imposed
+
+    """
+    # Make sure all inputs are compatible
+    assert all(
+        [isinstance(param, UncertainFunction) for param in params]
+    ), 'All inputs to "correlate" must be of type "UncertainFunction"'
+
+    # Put each ufunc's samples in a column-wise matrix
+    data = np.vstack([param._mcpts for param in params]).T
+
+    # Check if `corrmat` is positive-definite and return 'nearest' if not
+    corrmat = stabilize_corrmat(corrmat)
+
+    # Apply the correlation matrix to the sampled data
+    new_data = induce_correlations(data, corrmat)
+
+    # Re-set the samples to the respective variables
+    for i in range(len(params)):
+        params[i]._mcpts = new_data[:, i]
+
+
 def induce_correlations(data, corrmat):
     """
     Induce a set of correlations on a column-wise dataset
-    
+
     Parameters
     ----------
     data : 2d-array
@@ -112,12 +117,12 @@ def induce_correlations(data, corrmat):
         An n-by-n array that defines the desired correlation coefficients
         (between -1 and 1). Note: the matrix must be symmetric and
         positive-definite in order to induce.
-    
+
     Returns
     -------
     new_data : 2d-array
         An m-by-n array that has the desired correlations.
-        
+
     """
     # Create an rank-matrix
     data_rank = np.vstack([rankdata(datai) for datai in data.T]).T
@@ -152,7 +157,7 @@ def induce_correlations(data, corrmat):
             np.hstack((data_rank[:, i], new_data_rank[:, i])), return_inverse=True
         )
         old_order = order[: new_data_rank.shape[0]]
-        new_order = order[-new_data_rank.shape[0] :]
+        new_order = order[-new_data_rank.shape[0]:]
         tmp = data[np.argsort(old_order), i][new_order]
         data[:, i] = tmp[:]
 
@@ -161,23 +166,23 @@ def induce_correlations(data, corrmat):
 
 def plotcorr(X, plotargs=None, full=True, labels=None):
     """
-    Plots a scatterplot matrix of subplots.  
-    
+    Plots a scatterplot matrix of subplots.
+
     Usage:
-    
+
         plotcorr(X)
-        
+
         plotcorr(..., plotargs=...)  # e.g., 'r*', 'bo', etc.
-        
+
         plotcorr(..., full=...)  # e.g., True or False
-        
+
         plotcorr(..., labels=...)  # e.g., ['label1', 'label2', ...]
 
     Each column of "X" is plotted against other columns, resulting in
-    a ncols by ncols grid of subplots with the diagonal subplots labeled 
+    a ncols by ncols grid of subplots with the diagonal subplots labeled
     with "labels".  "X" is an array of arrays (i.e., a 2d matrix), a 1d array
     of MCERP.UncertainFunction/Variable objects, or a mixture of the two.
-    Additional keyword arguments are passed on to matplotlib's "plot" command. 
+    Additional keyword arguments are passed on to matplotlib's "plot" command.
     Returns the matplotlib figure object containing the subplot grid.
     """
     import matplotlib.pyplot as plt
@@ -195,18 +200,18 @@ def plotcorr(X, plotargs=None, full=True, labels=None):
 
         # Set up ticks only on one side for the "edge" subplots...
         if full:
-            if ax.is_first_col():
+            if ax.get_subplotspec().is_first_col():
                 ax.yaxis.set_ticks_position("left")
-            if ax.is_last_col():
+            if ax.get_subplotspec().is_last_col():
                 ax.yaxis.set_ticks_position("right")
-            if ax.is_first_row():
+            if ax.get_subplotspec().is_first_row():
                 ax.xaxis.set_ticks_position("top")
-            if ax.is_last_row():
+            if ax.get_subplotspec().is_last_row():
                 ax.xaxis.set_ticks_position("bottom")
         else:
-            if ax.is_first_row():
+            if ax.get_subplotspec().is_first_row():
                 ax.xaxis.set_ticks_position("top")
-            if ax.is_last_col():
+            if ax.get_subplotspec().is_last_col():
                 ax.yaxis.set_ticks_position("right")
 
     # Label the diagonal subplots...
